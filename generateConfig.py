@@ -27,12 +27,14 @@ for file in onlyfiles:
 	if("test" in file):
 		config.set('Data', 'test', file)
 
+config.set('Data', 'train_data_sf', 'train_data.sf')
+config.set('Data', 'test_data_sf', 'test_data.sf')
 config.set('Data', 'input_dir', input_dir)
 config.set('Analysis', 'pyFile', "analysis.py")
 config.set('Output', 'pyFile', "writeToCsv.py")
 config.set('Analysis', 'mapk', mapk)
 config.set('Algorithms', 'algos', algo_set)
-for algo in algo_set:
+for algo in algo_set.split(','):
 	config.set('Algorithms', 'algoFile', algo + ".py")
 	config.set('Analysis', 'target_' + algo, title + "_target_" + algo)
 	config.set('Analysis', 'prediction_' + algo, title + "_prediction_" + algo)
