@@ -27,3 +27,6 @@ for algo in algos_set:
 	conf['algoFile'] = config.get('Algorithms', 'algoFile')
 	conf[algo] = {'target': config.get('Analysis', 'target_' + algo), 
 					'prediction': config.get('Analysis', 'prediction_' + algo) }
+
+conf['KNN']['steps'] =  config.get('Algorithms', 'knn_steps')
+conf['KNN']['file_max_records'] = config.get('Algorithms', 'file_max_records')

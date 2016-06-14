@@ -38,7 +38,8 @@ for algo in algo_set.split(','):
 	config.set('Algorithms', 'algoFile', algo + ".py")
 	config.set('Analysis', 'target_' + algo, title + "_target_" + algo)
 	config.set('Analysis', 'prediction_' + algo, title + "_prediction_" + algo)
-
+config.set('Algorithms', 'KNN_Steps', 50000)
+config.set('Algorithms', 'file_max_records', 2000)
 
 config.set('Output', 'filename', 'output.csv')
 

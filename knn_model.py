@@ -1,26 +1,17 @@
 import numpy as np
-import time, pickle
+from getConfig import conf
+import time, pickle, datetime
 
 import graphlab, sys
 
-
-
-take_user_id = 'srch_destination_id'
-take_item_id = 'hotel_cluster'
-
-train_data = graphlab.SFrame.read_csv('train.csv', usecols=['user_id', 'srch_adults_cnt', 'srch_children_cnt', 'srch_rm_cnt', 'srch_destination_id', 'srch_destination_type_id', 'hotel_continent', 'hotel_country', 'hotel_market', 'is_booking', 'hotel_cluster'])
-train_data = train_data[train_data['is_booking'] == 1]
-train_1, test_1 = train_data.random_split(0.8, seed = 0)
-knn_model = graphlab.nearest_neighbors.create(train_1, features=['user_id', 'srch_adults_cnt', 'srch_children_cnt', 'srch_rm_cnt', 'srch_destination_id', 'srch_destination_type_id', 'hotel_continent', 'hotel_country', 'hotel_market'])
-
-
-
-targ_f = "target_knn.p"
-pred_f = "prediction_knn.p"
-temp = open(targ_f, "w")
-temp.close()
-temp = open(pred_f, "w")
-temp.close()
+train_sf = conf['train_data_sf']
+test_sf = conf['test_data_sf']
+path = conf['path']
+title = conf['title']
+targ_file = conf['KNN']['target']
+pred_file = conf['KNN']['prediction']
+steps = conf['KNN']['steps']
+file_max_records = conf['KNN']['file_max_records']
 
 target = [[]]
 prediction =[[]]
@@ -28,12 +19,44 @@ prediction =[[]]
 counter = 0
 num_items = 0
 
+train_data = graphlab.load_sframe(train_sf).sample(0.005, seed=0)
+
+print ''
+print "Column Names"
+columnNumber = 0
+columnArray = []
+for i in train_data.column_names():
+    print "[" + str(columnNumber) + "] " + i
+    columnNumber += 1
+    columnArray.append(i)
+
+features_used = raw_input("Choose feature(s) separated by comma to be used in KNN Model (default: all): ")
+target = input("Choose target variable which needs to be predicted: ")
+filtering = raw_input("If any filtering to be applied input the column number")
+
+target_var = columnArray[target]
+
+if(filtering != ""):
+    train_data = train_data[train_data[columnArray[int(filtering)]] == 1]
+
+train_1, test_1 = train_data.random_split(0.8, seed = 0)
+knn_model = graphlab.nearest_neighbors.create(train_1, features=features_used.split(','))
+
+
+
+## Initializing files 
+temp = open(targ_file, "w")
+temp.close()
+temp = open(pred_file, "w")
+temp.close()
+
+
+
 start = time.time()
 global_start = time.time()
 
-print "test rows", test_1.num_rows()
+print "Number of Test Rows", test_1.num_rows()
 
-steps = 50000
 row = 0
 while (row < test_1.num_rows()):
     limit = steps
@@ -44,29 +67,30 @@ while (row < test_1.num_rows()):
     print "row", row
     print "limit", limit
     for i in range(row, limit):
-        target.append([curr_sframe[i - row]['hotel_cluster']])
+        target.append([curr_sframe[i - row][target_var]])
         temp_list = []
         for model in range(i * 5, (i + 1) * 5) :
-            temp_list.append(train_1[pred_model[model]['reference_label']]['hotel_cluster'])
+            temp_list.append(train_1[pred_model[model]['reference_label']][target_var])
         prediction.append(temp_list)
         counter += 1
-        if(counter >= 2000):
-            pickle.dump(target[1:], open(targ_f,"ab"), -1)
-            pickle.dump(prediction[1:], open(pred_f,"ab"), -1)
+        if(counter >= file_max_records):
+            pickle.dump(target[1:], open(targ_file,"ab"), -1)
+            pickle.dump(prediction[1:], open(pred_file,"ab"), -1)
             target = [[]]
             prediction = [[]]
             num_items += counter
             counter = 0
-            print float(num_items * 100.0) / float(test_1.num_rows()), "Percentage Complete!" 
             end = time.time()
+            print float(num_items * 100.0) / float(test_1.num_rows()), "Percentage Complete!" 
             print num_items, "records done"
             print "time elapsed", end - start
             print "total time", end - global_start
+            print "Current Time", str(datetime.datetime.now().time())
             print ''
             start = end
     row += limit
-    pickle.dump(target[1:], open(targ_f,"ab"), -1)
-    pickle.dump(prediction[1:], open(pred_f,"ab"), -1)
+    pickle.dump(target[1:], open(targ_file,"ab"), -1)
+    pickle.dump(prediction[1:], open(pred_file,"ab"), -1)
 
 
 print "total rows ", test_1.num_rows()
