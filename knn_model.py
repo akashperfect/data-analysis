@@ -1,6 +1,6 @@
 import numpy as np
 from getConfig import conf
-import time, pickle, datetime
+import time, pickle, datetime, os
 
 import graphlab, sys
 
@@ -10,8 +10,9 @@ path = conf['path']
 title = conf['title']
 targ_file = conf['KNN']['target']
 pred_file = conf['KNN']['prediction']
-steps = conf['KNN']['steps']
-file_max_records = conf['KNN']['file_max_records']
+knn_model_file = conf['KNN']['model']
+steps = int(conf['KNN']['steps'])
+file_max_records = int(conf['KNN']['file_max_records'])
 
 target = [[]]
 prediction =[[]]
@@ -20,29 +21,42 @@ counter = 0
 num_items = 0
 
 train_data = graphlab.load_sframe(train_sf).sample(0.005, seed=0)
-
-print ''
-print "Column Names"
-columnNumber = 0
-columnArray = []
-for i in train_data.column_names():
-    print "[" + str(columnNumber) + "] " + i
-    columnNumber += 1
-    columnArray.append(i)
-
-features_used = raw_input("Choose feature(s) separated by comma to be used in KNN Model (default: all): ")
-target = input("Choose target variable which needs to be predicted: ")
-filtering = raw_input("If any filtering to be applied input the column number")
-
-target_var = columnArray[target]
-
-if(filtering != ""):
-    train_data = train_data[train_data[columnArray[int(filtering)]] == 1]
-
 train_1, test_1 = train_data.random_split(0.8, seed = 0)
-knn_model = graphlab.nearest_neighbors.create(train_1, features=features_used.split(','))
+
+columnArray = train_data.column_names()
+
+if(os.path.exists(knn_model_file) == False):
+
+    print ''
+    print "Column Names"
+    columnNumber = 0
+    for i in columnArray:
+        print "[" + str(columnNumber) + "] " + i
+        columnNumber += 1
+
+    features_used = raw_input("Choose feature(s) separated by comma to be used in KNN Model (default: all): ")
+    target = input("Choose target variable which needs to be predicted: ")
+    filtering = raw_input("If any filtering to be applied input the column number")
+
+    target_var = columnArray[target]
 
 
+    if(filtering != ""):
+        train_data = train_data[train_data[columnArray[int(filtering)]] == 1]
+
+    features_applied = []
+    for ids in features_used.split(','): 
+        features_applied.append(columnArray[int(ids)])
+
+    print "Features To Be Used"
+    print features_applied
+
+    knn_model = graphlab.nearest_neighbors.create(train_1, features=features_applied)
+
+    knn_model.save(knn_model_file)
+
+else:
+    knn_model = graphlab.load_model(knn_model_file)
 
 ## Initializing files 
 temp = open(targ_file, "w")
@@ -50,7 +64,11 @@ temp.close()
 temp = open(pred_file, "w")
 temp.close()
 
+columnArray
 
+target_var = columnArray[len(columnArray) - 1]
+
+print "Target", target_var
 
 start = time.time()
 global_start = time.time()

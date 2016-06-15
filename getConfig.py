@@ -26,7 +26,8 @@ conf['OutputPy'] = addPath(config.get('Output', 'pyFile'))
 for algo in algos_set:
 	conf['algoFile'] = config.get('Algorithms', 'algoFile')
 	conf[algo] = {'target': config.get('Analysis', 'target_' + algo), 
-					'prediction': config.get('Analysis', 'prediction_' + algo) }
+					'prediction': config.get('Analysis', 'prediction_' + algo),
+					'model': addPath(config.get('Algorithms', algo + "_model")) }
 
 conf['KNN']['steps'] =  config.get('Algorithms', 'knn_steps')
 conf['KNN']['file_max_records'] = config.get('Algorithms', 'file_max_records')
